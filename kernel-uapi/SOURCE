@@ -1,0 +1,4 @@
+Source repository: https://github.com/ect-m/images.git
+Source branch: pimx8-isp
+Source path: armbian-extension/files/pimx/vpu-src/nxp-uapi-linux/
+Target kernel ABI: NXP linux-imx lf-6.18.y, Pi.MX8 6.18.20-ecd-imx8m

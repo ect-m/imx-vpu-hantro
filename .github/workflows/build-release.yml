@@ -1,0 +1,39 @@
+name: Build VPU package
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Pi.MX8 UAPI snapshot against images branch
+        run: |
+          git clone --depth 1 --branch pimx8-isp https://github.com/ect-m/images.git /tmp/images
+          diff -ru --include='*.h' /tmp/images/armbian-extension/files/pimx/vpu-src/nxp-uapi-linux kernel-uapi
+      - name: Build in pinned Docker image
+        run: docker build --tag imx-vpu-hantro:ci --file docker/Dockerfile .
+      - name: Extract package
+        run: |
+          mkdir -p out
+          docker create --name imx-vpu-hantro-out imx-vpu-hantro:ci
+          docker cp imx-vpu-hantro-out:/src/out/. out/
+          docker rm imx-vpu-hantro-out
+      - name: Verify package
+        run: |
+          deb=$(find out -name '*.deb' -print -quit)
+          test -n "$deb"
+          dpkg-deb -f "$deb" Package Version Architecture
+          dpkg-deb -c "$deb" | grep -q '/usr/local/bin/vsiv4l2daemon'
+          dpkg-deb -c "$deb" | grep -q '/usr/lib/libhantro_vc8000e.so.1'
+      - name: Publish release asset
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*.deb
