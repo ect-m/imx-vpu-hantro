@@ -14,9 +14,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check Pi.MX8 UAPI snapshot against images branch
+        env:
+          IMAGES_REPO_TOKEN: ${{ secrets.IMAGES_REPO_TOKEN }}
         run: |
-          git clone --depth 1 --branch pimx8-isp https://github.com/ect-m/images.git /tmp/images
-          diff -ru --include='*.h' /tmp/images/armbian-extension/files/pimx/vpu-src/nxp-uapi-linux kernel-uapi
+          if [ -n "$IMAGES_REPO_TOKEN" ]; then
+            git -c http.extraheader="Authorization: Bearer $IMAGES_REPO_TOKEN" clone --depth 1 --branch pimx8-isp https://github.com/ect-m/images.git /tmp/images
+            diff -ru --include='*.h' /tmp/images/armbian-extension/files/pimx/vpu-src/nxp-uapi-linux kernel-uapi
+          else
+            echo 'IMAGES_REPO_TOKEN unset; using committed kernel-uapi snapshot'
+          fi
       - name: Build in pinned Docker image
         run: docker build --tag imx-vpu-hantro:ci --file docker/Dockerfile .
       - name: Extract package
