@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 OUT=${OUT_DIR:-$ROOT/out}
 VERSION=${PACKAGE_VERSION:-1.9.0-6.18.20-ecd-imx8m}
+export SOURCE_DATE_EPOCH=${SOURCE_DATE_EPOCH:-0}
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 source "$ROOT/sources.env"
@@ -56,6 +57,7 @@ Description: NXP i.MX8MP VPU userspace for Pi.MX8
  Combined VC8000E, Hantro G1/G2, and vsiv4l2daemon userspace.
  Built for kernel ABI $KERNEL_ABI.
 EOF
+find "$PKG" -print0 | xargs -0 touch --date="@$SOURCE_DATE_EPOCH"
 mkdir -p "$OUT"
 dpkg-deb --build --root-owner-group "$PKG" "$OUT/imx-vpu-hantro_${VERSION}_arm64.deb"
 dpkg-deb -I "$OUT/imx-vpu-hantro_${VERSION}_arm64.deb"
